@@ -2,3 +2,5 @@ this is a test
 new
 
 this and that
+
+Testing hook warnings
