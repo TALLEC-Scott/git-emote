@@ -8,3 +8,4 @@ test change for phi3
 test change for tinyllama
 test change for llama3.2
 test change for gemma3n:e2b
+test change for gemma3:1b
