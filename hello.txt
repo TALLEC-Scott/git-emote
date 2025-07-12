@@ -11,3 +11,4 @@ test change for gemma3n:e2b
 test change for gemma3:1b
 test change for qwen3:0.6b
 test change for gemma3n:latest
+test logging
