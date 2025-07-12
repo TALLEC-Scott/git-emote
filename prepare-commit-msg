@@ -1,60 +1,55 @@
 #!/bin/bash
 
-# Git hook to append emoji to commit messages using LLM API
-# This hook modifies the commit message by appending a relevant emoji
-# Set LLM_API_URL environment variable to enable this hook
+# Git hook to append emoji to commit messages
+# Requires LLM_API_URL, LLM_MODEL and API key depending on the provider
 
 COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
 SHA1=$3
 
-# Check if LLM_API_URL is set, exit if not
 if [ -z "$LLM_API_URL" ]; then
+    echo "Warning: LLM_API_URL environment variable is not set, aborting ..." >&2
     exit 0
 fi
 
-# Check if LLM_MODEL is set, exit with error if not
 if [ -z "$LLM_MODEL" ]; then
-    echo "Error: LLM_MODEL environment variable is not set" >&2
+    echo "Warning: LLM_MODEL environment variable is not set, aborting ..." >&2
     exit 1
 fi
 
 # Only process if this is a regular commit (not merge, squash, etc.)
 if [ -z "$COMMIT_SOURCE" ] || [ "$COMMIT_SOURCE" = "message" ]; then
-    # Read the current commit message
+
     COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
-    
-    # Skip if message is empty or starts with #
-    if [[ -z "$COMMIT_MSG" ]] || [[ "$COMMIT_MSG" =~ ^[[:space:]]*# ]]; then
+
+    if [[ -z "$COMMIT_MSG" ]] then
+        echo "Warning: Empty commit message"
         exit 0
     fi
-    
-    # Get emoji suggestion using OpenAI-compatible API
+
     EMOJI_RESPONSE=$(curl -s "$LLM_API_URL/v1/chat/completions" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $OPENAI_API_KEY" \
         -d "{\"model\": \"$LLM_MODEL\", \"messages\": [{\"role\": \"user\", \"content\": \"Respond with only a single emoji that represents this commit: $COMMIT_MSG\"}]}" \
         2>/dev/null)
     CURL_EXIT_CODE=$?
-    
+
     if [ $CURL_EXIT_CODE -eq 0 ] && [ -n "$EMOJI_RESPONSE" ]; then
-        # Check if response contains an error
+
         if echo "$EMOJI_RESPONSE" | grep -q '"error"'; then
             echo "Warning: LLM API returned error. Check if model '$LLM_MODEL' is available." >&2
         else
-            # Extract emoji from OpenAI-format JSON response
             EMOJI=$(echo "$EMOJI_RESPONSE" | grep -o '"content": *"[^"]*"' | sed 's/"content": *"//;s/"//' | sed 's/\\[a-z]//g' | tr -d ' \n\r')
-            
-            # If we got an emoji, append it to the commit message
+
             if [ -n "$EMOJI" ]; then
-                # Check if message already ends with an emoji (basic check)
+                # Check if message already ends with an emoji
                 if [[ ! "$COMMIT_MSG" =~ [[:space:]]*$ ]]; then
                     echo "${COMMIT_MSG} ${EMOJI}" > "$COMMIT_MSG_FILE"
                 else
                     echo "${COMMIT_MSG}${EMOJI}" > "$COMMIT_MSG_FILE"
                 fi
             else
-                echo "Warning: LLM API returned empty response. No emoji added." >&2
+                echo "Warning: LLM response does not contain emoji. No emoji added." >&2
             fi
         fi
     else
