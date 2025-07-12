@@ -23,4 +23,4 @@ that the tinyllama provides almost random emotes.
 ### Summary:
 - **Total tests performed**: 70 (7 models × 10 messages)
 - **Models with major issues**: qwen3:0.6b (consistent unicode issues), tinyllama (incoherent but sort of fun)
-- **My top picks: gemma3n:e4b, llama3.2:3b and phi3:8b
+- **My top picks**: gemma3n:e4b, llama3.2:3b and phi3:8b
